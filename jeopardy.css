@@ -1,0 +1,17 @@
+/* some colors you may find useful:
+  #115ff4
+  #060ce9
+  #28a200
+  #8d2ab5
+  #74119c
+*/
+
+td {
+  height:100px;
+  width: 100px;
+  border: 5px solid black;
+}
+
+.hidden {
+  display: none;
+}
