@@ -1,7 +1,11 @@
 const numCategories = 6;
 const numClues = 5;
 let categories = [];
+let canClick = true;
 const button = document.querySelector("button");
+const questionDivContainer = document.getElementById("questionDivContainer");
+const questionDivHeading = document.getElementById("questionDivHeading");
+const questionDivBody = document.getElementById("questionDivBody");
 
 //** GENERATE AN ARRAY OF RANDOM UNIQUE INDEX NUMS
 const getRandomIndexes = (num, max) => {
@@ -58,8 +62,10 @@ async function getClues() {
 //** SLOW REVEAL OF CATEGORIES FOR CURRENT GAME
 const revealCategories = () => {
   const revealContainer = document.getElementById("revealcategories");
+  button.classList.add("hidden");
   for (let category of categories) {
     let revealTitle = document.createElement("div");
+    revealTitle.classList.add("reveal");
     revealTitle.textContent = category.title;
     revealContainer.append(revealTitle);
   }
@@ -70,6 +76,7 @@ const revealCategories = () => {
 const makeHtmLBoard = (height, width) => {
   document.querySelector("table").classList.remove("hidden");
   document.getElementById("revealcategories").textContent = "";
+  button.classList.remove("hidden");
   const categoryHeadings = document.getElementById("categoryheading");
   const tbody = document.querySelector("tbody");
   tbody.textContent = "";
@@ -84,7 +91,9 @@ const makeHtmLBoard = (height, width) => {
     for (let j = 0; j < width; j++) {
       let cell = document.createElement("td");
       cell.setAttribute("id", `${j}${i}`);
-      cell.textContent = "?";
+      let icon = document.createElement("i");
+      icon.setAttribute("class", "far fa-question-circle fa-3x");
+      cell.append(icon);
       row.append(cell);
     }
     tbody.append(row);
@@ -93,7 +102,7 @@ const makeHtmLBoard = (height, width) => {
 
 //** RETRIEVE CLUE BASED OFF OF ID CLICKED
 const retrieveClue = (evt) => {
-  const targetId = evt.target.id.split("");
+  const targetId = evt.id.split("");
   const indexA = targetId[0];
   const indexB = targetId[1];
   return categories[indexA].clues[indexB];
@@ -110,32 +119,9 @@ const checkGameOver = () => {
 const gameOver = () => {
   document.querySelector("table").classList.add("hidden");
   document.getElementById("wincontainer").classList.remove("hidden");
+  clearQuestionDiv();
   button.textContent = "Play Again?";
 };
-
-//** CLICK HANDLER FOR CELL SELECTION
-document.querySelector("tbody").addEventListener("click", function (evt) {
-  if (evt.target.tagName === "TD") {
-    let currentClue = retrieveClue(evt);
-    if (currentClue.showing === null) {
-      currentClue.showing = "question";
-      evt.target.textContent = currentClue.question;
-    } else if (currentClue.showing === "question") {
-      currentClue.showing = "answer";
-      evt.target.textContent = currentClue.answer;
-    } else {
-      return;
-    }
-    if (checkGameOver()) {
-      gameOver();
-    }
-  }
-});
-
-//**CLICK HANDLER FOR BUTTON
-button.addEventListener("click", function () {
-  setupAndStart();
-});
 
 //** SHOW LOADING VIEW
 const showLoadingView = () => {
@@ -149,6 +135,13 @@ const hideLoadingView = () => {
   button.textContent = "Restart";
 };
 
+//** CLEAR QUESTION DIV
+const clearQuestionDiv = () => {
+  questionDivHeading.textContent = "";
+  questionDivBody.textContent = "";
+  canClick = true;
+};
+
 //** START/RESTART/CLEAR FOR NEW GAME
 const setupAndStart = () => {
   categories = [];
@@ -156,7 +149,50 @@ const setupAndStart = () => {
   getClues();
 };
 
+//**CLICK HANDLER FOR BUTTON
+button.addEventListener("click", function () {
+  clearQuestionDiv();
+  setupAndStart();
+});
 
+//** CLICK HANDLER FOR CELL SELECTION
+document.querySelector("tbody").addEventListener("click", function (evt) {
+  if (canClick === true) {
+    if (evt.target.tagName === "I") {
+      let eventParent = evt.target.parentElement;
+      let currentClue = retrieveClue(eventParent);
+      if (currentClue.showing === null) {
+        currentClue.showing = "question";
+        evt.target.setAttribute("class", "fas fa-stream fa-3x");
+        evt.target.parentElement.classList.add("active");
+        questionDivHeading.textContent = "Question:";
+        questionDivBody.textContent = currentClue.question;
+      } else if (currentClue.showing === "question") {
+        canClick = false;
+        currentClue.showing = "answer";
+        evt.target.setAttribute("class", "fas fa-check fa-3x");
+        evt.target.parentElement.classList.remove("active");
+        evt.target.style.cursor = "default";
+        questionDivHeading.textContent = "Answer:";
+        questionDivBody.textContent = currentClue.answer;
+        setTimeout(clearQuestionDiv, 2000);
+      } else {
+        return;
+      }
+      if (checkGameOver()) {
+        gameOver();
+      }
+    }
+  }
+});
 
-
-// //TEST  _ERASE*************************************************************
+//** SHOWS CURRENT QUESTION WHEN HOVERED OVER
+document.querySelector("tbody").addEventListener("mouseover", function (evt) {
+  if (evt.target.tagName === "TD") {
+    let currentClue = retrieveClue(evt.target);
+    if (currentClue.showing === "question") {
+      questionDivHeading.textContent = "Question:";
+      questionDivBody.textContent = currentClue.question;
+    }
+  }
+});
